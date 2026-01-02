@@ -15,6 +15,10 @@ cap = cv2.VideoCapture(0)
 prev_time = 0
 alpha = 0.2
 smoothed_x = None
+prev_x = None
+swipe_threshold = 0.08
+cooldown_time = 0.7
+last_swipe_time =0
 while True:
     ret, frame = cap.read()
     if not ret:
@@ -34,6 +38,16 @@ while True:
             cx = int(smoothed_x*w)
             cy = int(wrist.y*h)
             cv2.circle(frame, (cx, cy), 10, (0, 255, 255), -1)
+            current_time = time.time()
+            if prev_x is not None:
+                dx = smoothed_x - prev_x
+                if abs(dx) > swipe_threshold and (current_time - last_swipe_time) > cooldown_time:
+                    if dx > 0:
+                        print("Swipe Right Detected")
+                    else:
+                        print("Swipe Left Detected")
+                    last_swipe_time = current_time
+            prev_x = smoothed_x
             mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
     curr_time = time.time()
     fps = 1/(curr_time-prev_time) if prev_time != 0 else 0
