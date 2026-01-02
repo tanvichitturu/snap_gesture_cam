@@ -19,7 +19,29 @@ prev_x = None
 swipe_threshold = 0.08
 cooldown_time = 0.7
 last_swipe_time =0
-filters = ["Normal","B&W","Sepia","Cyberpunk","Warm"]
+def normal(frame):
+    return frame
+def black_white(frame):
+    return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+def sepia(frame):
+    kernel = np.array([[0.272, 0.534, 0.131],
+                       [0.349, 0.686, 0.168],
+                       [0.393, 0.769, 0.189]])
+    sepia_frame = cv2.transform(frame, kernel)
+    sepia_frame = np.clip(sepia_frame, 0, 255)
+    return sepia_frame.astype(np.uint8)
+def cyberpunk(frame):
+    edges = cv2.Canny(frame, 100, 200)
+    edges= cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+    neon = frame.copy()
+    neon[:,:,0] = np.clip(neon[:,:,0]+40,0,255)
+    neon[:,:,2] = np.clip(neon[:,:,2]+40,0,255)
+    return cv2.addWeighted(neon, 0.85,edges,0.15,0)
+def warm(frame):
+    frame = frame.copy()
+    frame[:,:,2]= np.clip(frame[:,:,1]+10,0,255)
+    return frame
+filters = [("Normal",normal),("B&W",black_white),("Sepia",sepia),("Cyberpunk",cyberpunk),("Warm",warm)]
 current_filter = 0
 while True:
     ret, frame = cap.read()
@@ -55,8 +77,10 @@ while True:
     curr_time = time.time()
     fps = 1/(curr_time-prev_time) if prev_time != 0 else 0
     prev_time = curr_time
-    cv2.putText(frame, f"FPS: {int(fps)}",(10,40),cv2.FONT_HERSHEY_PLAIN,3,(255,0,255),3)
-    cv2.putText(frame, f"Filter: {filters[current_filter]}",(10,80),cv2.FONT_HERSHEY_PLAIN,2,(0,255,0),2)
+    filter_name, filter_func = filters[current_filter]
+    frame = filter_func(frame)
+    cv2.putText(frame, f"Filter: {filter_name}",(10,40),cv2.FONT_HERSHEY_PLAIN,1,(0,255,0),2)
+    cv2.putText(frame, f"FPS: {int(fps)}",(10,80),cv2.FONT_HERSHEY_PLAIN,3,(255,0,255),3)
     cv2.imshow("webcam",frame)
 
 
