@@ -43,6 +43,19 @@ def warm(frame):
     return frame
 filters = [("Normal",normal),("B&W",black_white),("Sepia",sepia),("Cyberpunk",cyberpunk),("Warm",warm)]
 current_filter = 0
+def hud(frame, filter_name, fps):
+    overlay = frame.copy()
+    cv2.rectangle(
+        overlay,
+        (5,5),
+        (300,80),
+        (0,0,0),
+        -1)
+    alpha = 0.5
+    frame = cv2.addWeighted(overlay, alpha, frame, 1-alpha,0)
+    cv2.putText(frame, f"Filter: {filter_name}",(15,35), cv2.FONT_HERSHEY_SIMPLEX,1,(0,255,0),2)
+    cv2.putText(frame, f"FPS: {int(fps)}",(15,65), cv2.FONT_HERSHEY_PLAIN,0.9,(255,0,255),1)
+    return frame
 while True:
     ret, frame = cap.read()
     if not ret:
@@ -79,11 +92,8 @@ while True:
     prev_time = curr_time
     filter_name, filter_func = filters[current_filter]
     frame = filter_func(frame)
-    cv2.putText(frame, f"Filter: {filter_name}",(10,40),cv2.FONT_HERSHEY_PLAIN,1,(0,255,0),2)
-    cv2.putText(frame, f"FPS: {int(fps)}",(10,80),cv2.FONT_HERSHEY_PLAIN,3,(255,0,255),3)
+    frame = hud(frame, filter_name,fps)
     cv2.imshow("webcam",frame)
-
-
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 cap.release()
